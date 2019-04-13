@@ -6,8 +6,10 @@ import android.graphics.Bitmap;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -45,14 +47,15 @@ class StickerUtils {
 
     try {
       MediaStore.Images.Media.insertImage(context.getContentResolver(), file.getAbsolutePath(),
-          file.getName(), null);
+              file.getName(), null);
     } catch (FileNotFoundException e) {
       throw new IllegalStateException("File couldn't be found");
     }
     context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
   }
 
-  @NonNull public static RectF trapToRect(@NonNull float[] array) {
+  @NonNull
+  public static RectF trapToRect(@NonNull float[] array) {
     RectF r = new RectF();
     trapToRect(r, array);
     return r;
@@ -60,7 +63,7 @@ class StickerUtils {
 
   public static void trapToRect(@NonNull RectF r, @NonNull float[] array) {
     r.set(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY,
-        Float.NEGATIVE_INFINITY);
+            Float.NEGATIVE_INFINITY);
     for (int i = 1; i < array.length; i += 2) {
       float x = round(array[i - 1] * 10) / 10.f;
       float y = round(array[i] * 10) / 10.f;

@@ -5,10 +5,12 @@ import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
-import android.support.annotation.IntDef;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.IntDef;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -18,8 +20,10 @@ import java.lang.annotation.RetentionPolicy;
 public abstract class Sticker {
 
   @IntDef(flag = true, value = {
-      Position.CENTER, Position.TOP, Position.BOTTOM, Position.LEFT, Position.RIGHT
-  }) @Retention(RetentionPolicy.SOURCE) public @interface Position {
+          Position.CENTER, Position.TOP, Position.BOTTOM, Position.LEFT, Position.RIGHT
+  })
+  @Retention(RetentionPolicy.SOURCE)
+  public @interface Position {
     int CENTER = 1;
     int TOP = 1 << 1;
     int LEFT = 1 << 2;
@@ -41,7 +45,8 @@ public abstract class Sticker {
     return isFlippedHorizontally;
   }
 
-  @NonNull public Sticker setFlippedHorizontally(boolean flippedHorizontally) {
+  @NonNull
+  public Sticker setFlippedHorizontally(boolean flippedHorizontally) {
     isFlippedHorizontally = flippedHorizontally;
     return this;
   }
@@ -50,12 +55,14 @@ public abstract class Sticker {
     return isFlippedVertically;
   }
 
-  @NonNull public Sticker setFlippedVertically(boolean flippedVertically) {
+  @NonNull
+  public Sticker setFlippedVertically(boolean flippedVertically) {
     isFlippedVertically = flippedVertically;
     return this;
   }
 
-  @NonNull public Matrix getMatrix() {
+  @NonNull
+  public Matrix getMatrix() {
     return matrix;
   }
 
@@ -72,9 +79,11 @@ public abstract class Sticker {
 
   public abstract Sticker setDrawable(@NonNull Drawable drawable);
 
-  @NonNull public abstract Drawable getDrawable();
+  @NonNull
+  public abstract Drawable getDrawable();
 
-  @NonNull public abstract Sticker setAlpha(@IntRange(from = 0, to = 255) int alpha);
+  @NonNull
+  public abstract Sticker setAlpha(@IntRange(from = 0, to = 255) int alpha);
 
   public float[] getBoundPoints() {
     float[] points = new float[8];
@@ -126,13 +135,15 @@ public abstract class Sticker {
     }
   }
 
-  @NonNull public float[] getMappedBoundPoints() {
+  @NonNull
+  public float[] getMappedBoundPoints() {
     float[] dst = new float[8];
     getMappedPoints(dst, getBoundPoints());
     return dst;
   }
 
-  @NonNull public float[] getMappedPoints(@NonNull float[] src) {
+  @NonNull
+  public float[] getMappedPoints(@NonNull float[] src) {
     float[] dst = new float[src.length];
     matrix.mapPoints(dst, src);
     return dst;
@@ -142,7 +153,8 @@ public abstract class Sticker {
     matrix.mapPoints(dst, src);
   }
 
-  @NonNull public RectF getBound() {
+  @NonNull
+  public RectF getBound() {
     RectF bound = new RectF();
     getBound(bound);
     return bound;
@@ -152,7 +164,8 @@ public abstract class Sticker {
     dst.set(0, 0, getWidth(), getHeight());
   }
 
-  @NonNull public RectF getMappedBound() {
+  @NonNull
+  public RectF getMappedBound() {
     RectF dst = new RectF();
     getMappedBound(dst, getBound());
     return dst;
@@ -162,7 +175,8 @@ public abstract class Sticker {
     matrix.mapRect(dst, bound);
   }
 
-  @NonNull public PointF getCenterPoint() {
+  @NonNull
+  public PointF getCenterPoint() {
     PointF center = new PointF();
     getCenterPoint(center);
     return center;
@@ -172,14 +186,15 @@ public abstract class Sticker {
     dst.set(getWidth() * 1f / 2, getHeight() * 1f / 2);
   }
 
-  @NonNull public PointF getMappedCenterPoint() {
+  @NonNull
+  public PointF getMappedCenterPoint() {
     PointF pointF = getCenterPoint();
     getMappedCenterPoint(pointF, new float[2], new float[2]);
     return pointF;
   }
 
   public void getMappedCenterPoint(@NonNull PointF dst, @NonNull float[] mappedPoints,
-      @NonNull float[] src) {
+                                   @NonNull float[] src) {
     getCenterPoint(dst);
     src[0] = dst.x;
     src[1] = dst.y;
@@ -204,7 +219,7 @@ public abstract class Sticker {
    */
   public float getMatrixScale(@NonNull Matrix matrix) {
     return (float) Math.sqrt(Math.pow(getMatrixValue(matrix, Matrix.MSCALE_X), 2) + Math.pow(
-        getMatrixValue(matrix, Matrix.MSKEW_Y), 2));
+            getMatrixValue(matrix, Matrix.MSKEW_Y), 2));
   }
 
   /**
@@ -219,7 +234,7 @@ public abstract class Sticker {
    */
   public float getMatrixAngle(@NonNull Matrix matrix) {
     return (float) Math.toDegrees(-(Math.atan2(getMatrixValue(matrix, Matrix.MSKEW_X),
-        getMatrixValue(matrix, Matrix.MSCALE_X))));
+            getMatrixValue(matrix, Matrix.MSCALE_X))));
   }
 
   public float getMatrixValue(@NonNull Matrix matrix, @IntRange(from = 0, to = 9) int valueIndex) {
@@ -228,7 +243,7 @@ public abstract class Sticker {
   }
 
   public boolean contains(float x, float y) {
-    return contains(new float[] { x, y });
+    return contains(new float[]{x, y});
   }
 
   public boolean contains(@NonNull float[] point) {
