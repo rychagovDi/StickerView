@@ -172,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
     Drawable drawable1 =
             ContextCompat.getDrawable(this, R.drawable.haizewang_23);
     stickerView.addSticker(new DrawableSticker(drawable));
-    stickerView.addSticker(new DrawableSticker(drawable1), Sticker.Position.BOTTOM | Sticker.Position.RIGHT);
+    stickerView.addSticker(new DrawableSticker(drawable1), null,Sticker.Position.BOTTOM | Sticker.Position.RIGHT);
 
     Drawable bubble = ContextCompat.getDrawable(this, R.drawable.bubble);
     stickerView.addSticker(
@@ -180,8 +180,9 @@ public class MainActivity extends AppCompatActivity {
                     .setDrawable(bubble)
                     .setText("Sticker\n")
                     .setMaxTextSize(14)
-                    .resizeText()
-            , Sticker.Position.TOP);
+                    .resizeText(),
+            null,
+            Sticker.Position.TOP);
   }
 
   @Override

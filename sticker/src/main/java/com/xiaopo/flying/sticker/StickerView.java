@@ -84,6 +84,7 @@ public class StickerView extends FrameLayout {
   private final PointF currentCenterPoint = new PointF();
   private final float[] tmp = new float[2];
   private PointF midPoint = new PointF();
+  private final float[] matrixValues = new float[9];
   // endregion
   private final int touchSlop;
 
@@ -104,6 +105,7 @@ public class StickerView extends FrameLayout {
   private boolean constrained;
 
   private OnStickerOperationListener onStickerOperationListener;
+  private OnStickerMoveListener onStickerMoveListener;
 
   private long lastClickTime = 0;
   private int minClickDelayTime = DEFAULT_MIN_CLICK_DELAY_TIME;
@@ -186,6 +188,7 @@ public class StickerView extends FrameLayout {
   @Override
   protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
     super.onLayout(changed, left, top, right, bottom);
+
     if (changed) {
       stickerRect.left = left;
       stickerRect.top = top;
@@ -361,6 +364,9 @@ public class StickerView extends FrameLayout {
       if (onStickerOperationListener != null) {
         onStickerOperationListener.onStickerTouchedDown(handlingSticker);
       }
+      if (onStickerMoveListener != null) {
+        onStickerMoveListener.onStickerMoveStart(handlingSticker, event);
+      }
     }
 
     if (currentIcon == null && handlingSticker == null) {
@@ -375,6 +381,10 @@ public class StickerView extends FrameLayout {
 
     if (currentMode == ActionMode.ICON && currentIcon != null && handlingSticker != null) {
       currentIcon.onActionUp(this, event);
+    }
+
+    if (onStickerMoveListener != null && handlingSticker != null) {
+      onStickerMoveListener.onStickerMoveEnd(handlingSticker, event);
     }
 
     if (currentMode == ActionMode.DRAG
@@ -414,6 +424,9 @@ public class StickerView extends FrameLayout {
           handlingSticker.setMatrix(moveMatrix);
           if (constrained) {
             constrainSticker(handlingSticker);
+          }
+          if (onStickerMoveListener != null) {
+            onStickerMoveListener.onStickerMove(handlingSticker, event);
           }
         }
         break;
@@ -573,51 +586,24 @@ public class StickerView extends FrameLayout {
   @Override
   protected void onSizeChanged(int w, int h, int oldW, int oldH) {
     super.onSizeChanged(w, h, oldW, oldH);
-    for (int i = 0; i < stickers.size(); i++) {
-      Sticker sticker = stickers.get(i);
-      if (sticker != null) {
-        transformSticker(sticker);
-      }
-    }
+    restoreStickersState(w, h, oldW, oldH);
   }
 
-  /**
-   * Sticker's drawable will be too bigger or smaller
-   * This method is to transform it to fit
-   * step 1：let the center of the sticker image is coincident with the center of the View.
-   * step 2：Calculate the zoom and zoom
-   **/
-  protected void transformSticker(@Nullable Sticker sticker) {
-    if (sticker == null) {
-      Log.e(TAG, "transformSticker: the bitmapSticker is null or the bitmapSticker bitmap is null");
-      return;
+  protected void restoreStickersState(int newW, int newH, int oldW, int oldH) {
+    float xFactor = newW / (float) oldW;
+    float yFactor = newH / (float) oldH;
+    for (Sticker sticker : stickers) {
+      Matrix matrix = sticker.getMatrix();
+      matrix.getValues(matrixValues);
+      matrixValues[0] = matrixValues[0] * xFactor;
+      matrixValues[1] = matrixValues[1] * xFactor;
+      matrixValues[2] = matrixValues[2] * xFactor;
+      matrixValues[3] = matrixValues[3] * yFactor;
+      matrixValues[4] = matrixValues[4] * yFactor;
+      matrixValues[5] = matrixValues[5] * yFactor;
+      matrix.setValues(matrixValues);
+      sticker.setMatrix(matrix);
     }
-
-    sizeMatrix.reset();
-
-    float width = getWidth();
-    float height = getHeight();
-    float stickerWidth = sticker.getWidth();
-    float stickerHeight = sticker.getHeight();
-    //step 1
-    float offsetX = (width - stickerWidth) / 2;
-    float offsetY = (height - stickerHeight) / 2;
-
-    sizeMatrix.postTranslate(offsetX, offsetY);
-
-    //step 2
-    float scaleFactor;
-    if (width < height) {
-      scaleFactor = width / stickerWidth;
-    } else {
-      scaleFactor = height / stickerHeight;
-    }
-
-    sizeMatrix.postScale(scaleFactor / 2f, scaleFactor / 2f, width / 2f, height / 2f);
-
-    sticker.getMatrix().reset();
-    sticker.setMatrix(sizeMatrix);
-
     invalidate();
   }
 
@@ -717,25 +703,29 @@ public class StickerView extends FrameLayout {
 
   @NonNull
   public StickerView addSticker(@NonNull Sticker sticker) {
-    return addSticker(sticker, Sticker.Position.CENTER);
+    return addSticker(sticker, null);
   }
 
-  public StickerView addSticker(@NonNull final Sticker sticker,
-                                final @Sticker.Position int position) {
+  @NonNull
+  public StickerView addSticker(@NonNull Sticker sticker, @Nullable OnStickerAddedCallback callback) {
+    return addSticker(sticker, callback, Sticker.Position.CENTER);
+  }
+
+  public StickerView addSticker(@NonNull final Sticker sticker, @Nullable final OnStickerAddedCallback callback, final @Sticker.Position int position) {
     if (ViewCompat.isLaidOut(this)) {
-      addStickerImmediately(sticker, position);
+      addStickerImmediately(sticker, position, callback);
     } else {
       post(new Runnable() {
         @Override
         public void run() {
-          addStickerImmediately(sticker, position);
+          addStickerImmediately(sticker, position, callback);
         }
       });
     }
     return this;
   }
 
-  protected void addStickerImmediately(@NonNull Sticker sticker, @Sticker.Position int position) {
+  protected void addStickerImmediately(@NonNull Sticker sticker, @Sticker.Position int position, @Nullable OnStickerAddedCallback callback) {
     setStickerPosition(sticker, position);
 
 
@@ -750,6 +740,9 @@ public class StickerView extends FrameLayout {
 
     handlingSticker = sticker;
     stickers.add(sticker);
+    if (callback != null) {
+      callback.onStickerAdded(sticker);
+    }
     if (onStickerOperationListener != null) {
       onStickerOperationListener.onStickerAdded(sticker);
     }
@@ -864,6 +857,17 @@ public class StickerView extends FrameLayout {
     return onStickerOperationListener;
   }
 
+  @NonNull
+  public StickerView setOnStickerMoveListener(@Nullable OnStickerMoveListener onStickerMoveListener) {
+    this.onStickerMoveListener = onStickerMoveListener;
+    return this;
+  }
+
+  @Nullable
+  public OnStickerMoveListener getOnStickerMoveListener() {
+    return onStickerMoveListener;
+  }
+
   @Nullable
   public Sticker getCurrentSticker() {
     return handlingSticker;
@@ -896,5 +900,13 @@ public class StickerView extends FrameLayout {
     void onStickerFlipped(@NonNull Sticker sticker);
 
     void onStickerDoubleTapped(@NonNull Sticker sticker);
+  }
+
+  public interface OnStickerMoveListener {
+    void onStickerMoveStart(@NonNull Sticker sticker, @NonNull MotionEvent event);
+
+    void onStickerMove(@NonNull Sticker sticker, @NonNull MotionEvent event);
+
+    void onStickerMoveEnd(@NonNull Sticker sticker, @NonNull MotionEvent event);
   }
 }
