@@ -26,8 +26,6 @@ dependencies {
 }
 
 bintrayUpload {
-    user = "rychagov"
-    key = "de82e2f4128d4b5e6a61d57fe27ac147405e2d77"
     artifactId = "sticker-view"
     groupId = "com.rychagovd.widgets"
     organization = "rychagovd"
